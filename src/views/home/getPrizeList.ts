@@ -22,7 +22,7 @@ interface xlsxItem {
 export const PrizeSize = 100
 
 // 适配数据
-const adapterPrizeList = (list: xlsxItem[]): PrizeItem[] => {
+function adapterPrizeList (list: xlsxItem[]): PrizeItem[] {
   let result = list.map(item => {
     let frequency = Number(item.中奖频率)
     if (Number.isNaN(frequency)) {
@@ -41,12 +41,11 @@ const adapterPrizeList = (list: xlsxItem[]): PrizeItem[] => {
   })
   result = calcPrizePos(result)
   setPrizeRate(result)
-  console.log(result, 'result')
   return result
 }
 
 // 计算位置
-const calcPrizePos = (data: PrizeItem[]) => {
+function calcPrizePos (data: PrizeItem[]) {
   // 每条边的格子数
   const cells = Math.floor(data.length / 4)
   let currLen = 0
@@ -74,7 +73,7 @@ const calcPrizePos = (data: PrizeItem[]) => {
 }
 
 // 设置中奖概率
-const setPrizeRate = (data: PrizeItem[]) => {
+function setPrizeRate (data: PrizeItem[]) {
   let totalFrequency = 0
   for (let i = 0; i < data.length; i++) {
     totalFrequency += data[i].frequency
@@ -88,25 +87,15 @@ const setPrizeRate = (data: PrizeItem[]) => {
     curr.from = !prev ? 0 : prev.to
     curr.to = curr.from + curr.rate
   }
-  
-  data.forEach(item => {
-    item.rate = item.frequency / totalFrequency
-  })
 }
 
-export default function usePrizeList () {
-  const prizeList = ref<PrizeItem[]>([])
-  const avgCells = computed(() => { // 每条边的格子数
-    return Math.floor(prizeList.value.length / 4) + 1
-  })
-  
+export default function getPrizeList (callback?: Function) {
   loadExcelFile('./public/files/data.xlsx', (res: WorkBook) => {
-    let list: xlsxItem[] = utils.sheet_to_json(res.Sheets[res.SheetNames[0]])
-    prizeList.value = adapterPrizeList(list)
+    const list: xlsxItem[] = utils.sheet_to_json(res.Sheets[res.SheetNames[0]])
+    const prizeList = adapterPrizeList(list)
+    callback && callback({
+      prizeList,
+      avgCells: Math.floor(prizeList.length / 4) + 1
+    })
   })
-  
-  return {
-    prizeList,
-    avgCells
-  }
 }

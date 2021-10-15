@@ -2,13 +2,14 @@
 <script lang="tsx">
 import { toPx, rAF } from "@/utils"
 import tween from "@/utils/tween"
-import { computed, ref } from "vue"
-import usePrizeList, { PrizeSize } from './usePrizeList'
+import { computed, onBeforeMount, ref } from "vue"
+import getPrizeList, { PrizeSize, PrizeItem } from './getPrizeList'
 
 export default {
   name: 'home',
   setup () {
-    const { prizeList, avgCells } = usePrizeList() // 奖品列表
+    const prizeList = ref<PrizeItem[]>([])
+    const avgCells = ref(0)
     const activeIndex = ref<number>(-1)
     const listStyle = computed(() => {
       if (avgCells.value) {
@@ -19,7 +20,18 @@ export default {
       }
     })
     
-    const increaseActiveIndex = () => {
+    onBeforeMount(() => {
+      initData()
+    })
+    
+    function initData () {
+      getPrizeList((data: any) => {
+        prizeList.value = data.prizeList
+        avgCells.value = data.avgCells
+      })
+    }
+    
+    function increaseActiveIndex () {
       if (activeIndex.value >= prizeList.value.length - 1) {
         activeIndex.value = 0
       } else {
@@ -28,7 +40,7 @@ export default {
     }
     
     // 开始抽奖
-    const runLottery = () => {
+    function runLottery () {
       const hitNum = Math.random() // 随机抽取一个中奖数字
       const hitIndex = findPrizeByHitNumber(hitNum) // 找到抽中的奖品
       if (hitIndex === -1) return  // 基本不会出现
@@ -37,7 +49,7 @@ export default {
     }
     
     let timer: any
-    const playLotteryAmin = (hitIndex: number) => {
+    function playLotteryAmin (hitIndex: number) {
       const idx = prizeList.value.length - 1 
       const slowAminWalk = 8
       
@@ -90,7 +102,7 @@ export default {
     }
     
     // 根据中奖数字找到对应奖品
-    const findPrizeByHitNumber = (num: number) => {
+    function findPrizeByHitNumber (num: number) {
       return prizeList.value.findIndex(prize => (num >= prize.from && num <= prize.to))
     }
     
